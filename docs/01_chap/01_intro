@@ -1,0 +1,130 @@
+GFLOPS - giga (10^9)  floating-point operations per second;
+TFLOPS - tera (10^12) floating-point operations per second;
+CUDA - Compute Unified Device Architecture.
+
+
+					1 Introduction
+
+	Starting from 2003 virtually all vendors have switched to a model in which
+multiple physical CPUs, reffered to as processor cores, are used in each chip
+to increase the processing power.
+	For a particular application to benefit from multiple processor cores, its work
+must be divided into multiple instruction sequences that can simultaneously execute
+on these processor cores.
+	A sequential program will run on only one of the processor cores. Instead, in
+parallel program multiple threads of execution cooperate to complete the work faster.
+
+
+					1.1 Heterogeneous parallel computing
+	The industry has settled on two main trajectories for defigning microprocessors:
+The multicore:
+	maintains the execution speed of sequential programs while moving into multiple
+	cores.
+The many-thread:
+	focuses on the execution throughput of parallel applications.
+
+As of 2021, the peak floating-point throughput of the Nvidia Tesla A100 is
+	9.7 TFLOPS for 64-bit double-precision,
+	156 TFLOPS for 32-bit double-precision and
+	312 TFLOPS for 16-bit half-precision.
+
+In comparison, the peak floating-point throughput of the recent Intel 24-core
+processor is:
+	0.33 TFLOPS for double-precision,
+	0.66 TFLOPS for single-precision.
+
+	The large peak performance gap is because of differences in the fundamental
+design philosophies between th two types of processors.
+
+	CPU Latency-oriented design:
+The CPU is optimized for sequential code performance. The ALU and operand data delivery
+logic are designed to minimize the effective latency of arithmetic operations at
+the cost of increased use of chip area and power per unit. Large last-level on-chip
+caches are designed to capture frequently accessed data and convert some of the
+long-latency memory accesses into short-latency cache accesses.
+
+	GPU throughput-oriented design:
+This approach strives to maximize the total execution throughput of a large number of
+threads while allowing individual threads to take a potentially much longer time to
+execute.
+	Vendors look for a ways to maximize the chip area and power buget dedicated to
+floating-point calculations and memory access throughput. The speed of many graphics
+applications is limited by the rate at which data can be delivered from the memory
+system into the processors and vice versa.
+	In terms of power and chip area the task of reducing arithmetic latency is much
+more expensive than increasing arithmetic throughput.
+	To double the arithmetic throughput one can double the number of ALUs at the
+cost of doubling the chip area and power consumption.
+	However, reducing the arithmetic latency by half require doubling the current at
+the cost of more than doubling the chip area used, and quadrupling the power
+consumption.
+	Therefore the prevailing solution in GPUs is to optimize for the execution
+throughput of massive numbers of threads rather than reducing the latency of individual
+threads.
+	The application software for these GPUs is expected to be written with a large
+number of parallel threads. The hardware takes advantage of the large number of threads
+to find work to do when some of them are waiting for long-latency memory accesses or
+arithmetic operations. Small cache memories in Fig 1.1B are provided to help control
+the bandwidth requirements of these applications so that multiple threads that access
+the same memory data don't all need to go to the DRAM.
+	CUDA is designed to support joint CPU-GPU execution of an application. The decision
+factors to choose the processors for running an applications are:
+	- processor's presence in the marketplace (installed base);
+	- practical form factors and easy accessibility;
+	- speed of execution;
+
+
+					1.2 Why more speed or parallelism?
+	A good implementation on GPU can achieve a speed up of more than 100 times over
+sequential execution. If the application includes what we call "Data parallelism", it
+is often possible to achieve a 10x speedup with jut a few hours of work.
+	With a huge quantity of data, much of the computation can be done on different
+parts of it in parallel, although they will have to be reconciled at some point. In
+most  cases, effective management of data delivery can have a major impact on the
+achievable speed of a parallel application.	This book aims to present the data
+management techniques in an intuitive way.
+
+
+					1.3 Speeding up real applications
+	speedup - is the ratio of the time used to execute the application in system "B"
+over the time used to execute the same application in system "A".
+	The speedup that is achievable by a parallel computing system over a serial one
+depends on the portion of the application that can be parallelized. For example, if the
+percentage of time spent in the part that can be parallelized is 30%, a 100x speedup
+of the parallel portion will reduce the total execution time of the application by
+no more than 30%. That is, the speedup for the entire application will be only about
+1 / (1 - 0.297) = 1.42x.
+	Amdahl's law: the level of speedup that one can achieve through parallel execution
+can be severely limited by the parallelizable portion of the application.
+On the other hand, if 99% of the execution time is in the parralel portion, a 100x
+speedup of the parallel portion will reduce the application execution to 1.99% of the
+original time, which gives the entire application a 50x speedup.
+	The speed of reading and writing a data is the second important factor for the
+achievable level of speedup. In practice, straightforward parallelization of
+applications often saturates the memory (DRAM) bandwidth, resulting in only about
+a 10x speedup. The trick is to figure out how to get around memory bandwidth
+limitations, which involves doing one of many transformations to utilize specialized
+GPU on-chip memories to drastically reduce the number of accesses to the DRAM.
+	However one must further optimize the code to get around limitations such as
+limited on-chip memory capacity.
+	Most applications have portions that can be much better executed by the CPU. One
+must make sure that the code is written so that GPUs complement CPU execution.
+	Although a typical application has a parts of sequential code which are hard or
+even meaningless to parallelize, they tend to account for only a small portion of the
+execution time.
+
+
+					1.4 Challenges in parallel programming
+	First and foremost, it can be challenging to design parallel algorightms with the
+same level of algorithmic complexity as that of sequential algorithms. Sometimes parallel algorithms do so much work compared to their sequential counterparts, that
+they ended up running slower for large input datasets.
+	Second, is the memory access latency and/or throughput. We refer to these
+application as "memory bound"; by contrast, compute bound applications are limited
+by the numner of instructions performed per byte of data.
+	Third, the input data characteristics. The vavriations in sizes and distributions
+can cause uneven amount of work to be assigned to the parallel threads and can
+significantly reduce the effectiveness of parallel execution.
+	Fourth, some applications can be parallelized while requiring little collaboration
+across different threads (embarrassignly parallel). Other applications require threads
+to collaborate with each other, which requires using synchronization operations such as
+barriers or atomic operations.
