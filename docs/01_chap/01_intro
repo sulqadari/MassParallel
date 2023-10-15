@@ -16,7 +16,7 @@ parallel program multiple threads of execution cooperate to complete the work fa
 
 
 					1.1 Heterogeneous parallel computing
-	The industry has settled on two main trajectories for defigning microprocessors:
+	The industry has settled on two main trajectories for designing microprocessors:
 The multicore:
 	maintains the execution speed of sequential programs while moving into multiple
 	cores.
@@ -34,7 +34,7 @@ processor is:
 	0.66 TFLOPS for single-precision.
 
 	The large peak performance gap is because of differences in the fundamental
-design philosophies between th two types of processors.
+design philosophies between the two types of processors.
 
 	CPU Latency-oriented design:
 The CPU is optimized for sequential code performance. The ALU and operand data delivery
@@ -92,7 +92,7 @@ over the time used to execute the same application in system "A".
 depends on the portion of the application that can be parallelized. For example, if the
 percentage of time spent in the part that can be parallelized is 30%, a 100x speedup
 of the parallel portion will reduce the total execution time of the application by
-no more than 30%. That is, the speedup for the entire application will be only about
+no more than 29.7%. That is, the speedup for the entire application will be only about
 1 / (1 - 0.297) = 1.42x.
 	Amdahl's law: the level of speedup that one can achieve through parallel execution
 can be severely limited by the parallelizable portion of the application.
@@ -121,7 +121,7 @@ they ended up running slower for large input datasets.
 	Second, is the memory access latency and/or throughput. We refer to these
 application as "memory bound"; by contrast, compute bound applications are limited
 by the numner of instructions performed per byte of data.
-	Third, the input data characteristics. The vavriations in sizes and distributions
+	Third, the input data characteristics. The variations in sizes and distributions
 can cause uneven amount of work to be assigned to the parallel threads and can
 significantly reduce the effectiveness of parallel execution.
 	Fourth, some applications can be parallelized while requiring little collaboration

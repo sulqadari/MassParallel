@@ -2,36 +2,51 @@
 This course is divided into four parts each of wich discusses
 different themes, paradigms and algorithms with difficulty in ascendant order.
 
-	01_chap "Introduction":
+	01 chap "Introduction":
 
 Part 1 "Fundamental concepts"
 
-	02_chap "":
+	02 chap "Heterogeneous data parallel computing":
+	Introduces data parallelism and CUDA C programming. Covers the thought processes
+	that are involved in:
+	- identifying the part of application to be parallelized;
+	- isolating the data to be used by the parallelized code;
+	- transferring data to and from GPU;
+	- developing kernel functions in parallel threads;
+	- 
 	
-	03_chap "":
+	03 chap "Multidimentional grids and data":
+	explains the handling multidimantional data using multidimentional organisation of
+	threads. It gives enough insight into the creation, organization, resource binding
+	and data binding of threads to enable the reader to implement sophisticated
+	computation using CUDA C.
 
-	04_chap "Compute Architecture and Scheduling":
+	04 chap "Compute Architecture and Scheduling":
+	introduces the GPU architecure, with a focus on how the computational cores are
+	organized and how threads are scheduled to execute on these cores.
 	Consolidates discussions on architecture and scheduling considerations.
 
-	05_chap "Memory Architecture and Data Locality":
+	05 chap "Memory Architecture and Data Locality":
+	Extends chapter 4 by discussing the memory architecture of a GPU.
 
-	06_chap "Performance Considerations":
+	06 chap "Performance Considerations":
 	Provides a more thorough handling of thread granularity considerations and
 	checklist of common performance optimisation strategies and the performance
 	bottlenecks that each strategy tackles.
 
 Part 2 "Parallel Patterns"
 
-	07_chap "Convolution":
-	Unlike the previous edition, the current one focuses more on two-dimensional
-	convolution.
+	07 chap "Convolution":
+	focuses more on two-dimensional convolution pattern used in digital signal
+	processing and computer vision. This pattern will be used to introduce constant
+	memory and caching in modern GPUs.
 
-	08_chap "Stencil":
-	Provides a more thorough treatment of the 'stencil' pattern, emphasizing the
-	mathematical backgroung behind the computation and aspects that make it
-	different from convolution, thereby enabling additional optimizations.
+	08 chap "Stencil":
+	a pattern, similar to "Convolution", but is rooted in solving differential
+	equations and has specific features that present unique opportunities for further
+	optimization of data access locality.
 
-	09_chap "Parallel Histogram":
+	09 chap "Parallel Histogram":
 	Applies incremental approach to performance optimization of 'histogram' pattern.
 	The first optimization to be applied is 'Privatization', which is aimed to reduce
 	contention of atomics.
@@ -40,30 +55,30 @@ Part 2 "Parallel Patterns"
 	The third one is 'Shared memory for the private bins' to reduce the access
 	latency. 
 
-	10_chap "Reduction and Minimizing Divergence":
+	10 chap "Reduction and Minimizing Divergence":
 	Provides a more complete presentation of the 'reduction' pattern with an
 	incremental approach to applying the optimizations and a more thorough analysis
 	of the associated performance tradeoffs.
 
-	11_chap "Prefix sum":
+	11 chap "Prefix sum":
 	Important algorithm primitive that can facilitate the conversion of sequential,
 	recursive formulation of the problems into more parallel forms.
 
-	12_chap "":
+	12 chap "Merge":
 
 Part 3 "Advanced Patterns and Applications"
 
-	13_chap "Sorting":
+	13 chap "Sorting":
 	Presents 'radix sort' as a noncomparison sort algorithm that is highly
 	amendable to GPU parallelization and follows an incremental approach to optimizing
 	it and analyzing the performance tradeoffs.
 
-	14_chap "Sparse Matrix Computation":
+	14 chap "Sparse Matrix Computation":
 	Introduces a list of considerations that go into the design of different
 	'sparse matrix storage' formats which is used throughout this book to analyze the
 	tradeoffs between the different formats.
 
-	15_chap "Graph Traversal":
+	15 chap "Graph Traversal":
 	Covers a more comprehensive set of parallelization strategies and analyzes the
 	tradeooffs between them. This strategies include: "vertex-centric push-based",
 	"vertex-centric pull-based", "edge-centric", and linear algebraic implementation
@@ -72,15 +87,15 @@ Part 3 "Advanced Patterns and Applications"
 	The classification of these alternatives isn't unique to BFS but applies to
 	parallelizing graph algorithms in general.
 
-	16_chap "Deep Learning":
+	16 chap "Deep Learning":
 	Provides a comprehensive yet intuitive theoretical backgroung for understanding
 	modern neural networking.
 
-	17_chap "":
+	17 chap "Iterative magnetic resonance imaging reconstruction":
 	
-	18_chap "":
+	18 chap "Electostatic potential map":
 	
-	19_chap "Parallel Programming and Computational Thinking":
+	19 chap "Parallel Programming and Computational Thinking":
 	Serves as concluding chapter for parts I and II. The discussion of problem
 	decomposition is particularly expanded to introduce the generalizations of
 	'output-centric decomposition' and 'input-centric decomposition' to discuss
@@ -88,11 +103,11 @@ Part 3 "Advanced Patterns and Applications"
 
 Part 4 "Advances practices"
 
-	20_chap "":
+	20 chap "Programming a heterogeneous computing cluster":
 
-	21_chap "CUDA Dynamic Parallelism":
+	21 chap "CUDA Dynamic Parallelism":
 	Exposes application examples with the other programming details discudes more
 	briefly while referring interested readers to the CUDA programming guide.
 
-	22_chap "":
+	22 chap "Advanced practices and future evolution":
 
