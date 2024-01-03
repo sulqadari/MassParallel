@@ -1,0 +1,5 @@
+/home/telman/develop/MassParallel/02_chapter/build/CMakeFiles/edit_cache.dir
+/home/telman/develop/MassParallel/02_chapter/build/CMakeFiles/rebuild_cache.dir
+/home/telman/develop/MassParallel/02_chapter/build/cpu/CMakeFiles/VectorAdditionCPU.dir
+/home/telman/develop/MassParallel/02_chapter/build/cpu/CMakeFiles/edit_cache.dir
+/home/telman/develop/MassParallel/02_chapter/build/cpu/CMakeFiles/rebuild_cache.dir
