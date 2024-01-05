@@ -65,7 +65,7 @@ readFile(const char* path, size_t* fileSize)
 	*fileSize = ftell(file);
 	rewind(file);
 
-	buffer = malloc(*fileSize + 1);
+	buffer = (unsigned char*)malloc(*fileSize + 1);
 	if (NULL == buffer) {
 		fprintf(stderr, "Failed to allocate memory for buffer.\n");
 		return NULL;
@@ -85,25 +85,32 @@ readFile(const char* path, size_t* fileSize)
 	return buffer;
 }
 
-static void
+static __global__ void
 toGrayscale(unsigned char* image, uint32_t imageSize,
 								unsigned char* output)
 {
-	char r;
+	unsigned char r;
 	unsigned char g;
 	unsigned char b;
 	unsigned char gray;
 
-	for (uint32_t offset = 0; offset < imageSize; offset += 3) {
-		r = image[offset];
-		g = image[offset + 1];
-		b = image[offset + 2];
-		
-		gray = (0.21f * r) + (0.71f * g) + (0.07f * b);
-		output[offset] = gray;
-		output[offset + 1] = gray;
-		output[offset + 2] = gray;
-	}
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	// Each third subsequent thread only shall be aplied
+	if ((index % 0x03))
+		return;
+	
+	if (index >= imageSize)
+		return;
+	
+	r = image[index];
+	g = image[index + 1];
+	b = image[index + 2];
+	
+	gray = (0.21f * r) + (0.71f * g) + (0.07f * b);
+	output[index] = gray;
+	output[index + 1] = gray;
+	output[index + 2] = gray;
 }
 
 int
@@ -119,33 +126,86 @@ main(int argc, char* argv[])
 	unsigned char* image;
 	size_t imageSize = 0;
 
-	// download an image (.bmp format)
+	// download an image (24-bit .bmp format only)
 	image = readFile(argv[1], &imageSize);
 	if (NULL == image)
 		return (1);
-	
-	unsigned char* output = malloc(imageSize);
+
+	unsigned char* d_image;
+	if (cudaMalloc(&d_image, imageSize)) {
+		fprintf(stderr, "Failed to allocate memory for d_image array\n");
+		free(image);
+		return (1);
+	}
+
+	unsigned char* output = (unsigned char*)malloc(imageSize);
+	if (NULL == output) {
+		fprintf(stderr, "Failed to allocate memory for the output array.\n");
+		free(image);
+		return (1);
+	}
+
+	unsigned char* d_output;
+	if (cudaMalloc(&d_output, imageSize)) {
+		fprintf(stderr, "Failed to allocate memory for d_output array\n");
+		free(image);
+		free(output);
+		cudaFree(d_image);
+		return (1);
+	}
+
+	if (cudaMemcpy(d_image, image, imageSize, cudaMemcpyHostToDevice)) {
+		fprintf(stderr, "Failed to copy from image to d_image\n");
+		free(image);
+		free(output);
+		cudaFree(d_image);
+		cudaFree(d_output);
+		return (1);
+	}
 
 	// copy the header and BitInfo
 	memcpy(output, image, 64);
+	
+	if (cudaMemcpy(d_output, output, 64, cudaMemcpyHostToDevice)) {
+		fprintf(stderr, "Failed to copy from output to d_output\n");
+		free(image);
+		free(output);
+		cudaFree(d_image);
+		cudaFree(d_output);
+		return (1);
+	}
 
 	uint32_t offBits = 10;
 	offBits = image[offBits + 1] << 8 | image[offBits];
 
+	int blockSize = 256;
+	unsigned int roundedSize = ceil(imageSize / (double)blockSize);
+
 	gettimeofday(&start, NULL);
 	// perform color to grayscale convertion
-	toGrayscale(&image[offBits], imageSize - offBits, &output[offBits]);
+	toGrayscale<<<roundedSize, blockSize>>>(&d_image[offBits], imageSize - offBits, &d_output[offBits]);
+	cudaDeviceSynchronize();
 	gettimeofday(&stop, NULL);
-	
+
 	elapsed = GET_MS(start, stop);
 	printf("elapsed time: %.04f ms.\n", elapsed);
-
 	// compile the new block of image with the old
 	// metadata and store the output on the disk.
-//	toHex(output, imageSize, "./hexDump.txt");
+
+	if (cudaMemcpy(output, d_output, imageSize, cudaMemcpyDeviceToHost)) {
+		fprintf(stderr, "Failed to copy from output to d_output\n");
+		free(image);
+		free(output);
+		cudaFree(d_image);
+		cudaFree(d_output);
+		return (1);
+	}
+
+	toHex(output, imageSize, "./hexDump.txt");
 	writeFile("grayscaled.bmp", output, imageSize);
 	free(image);
 	free(output);
-
+	cudaFree(d_image);
+	cudaFree(d_output);
 	return (0);
 }

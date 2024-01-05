@@ -9,4 +9,4 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall		\
 )
 
 add_subdirectory(cpu)
-# add_subdirectory(gpu)
+add_subdirectory(gpu)
