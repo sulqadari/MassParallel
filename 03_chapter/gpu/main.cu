@@ -119,41 +119,30 @@ main(int argc, char* argv[])
 	struct timeval start, stop;
 	double elapsed;
 	if (argc < 2) {
-		printf("Usage: FadeOutCPU <~/path/to/image/picture.bmp>\n");
+		printf("Usage: FadeOutGPU <~/path/to/image/picture.bmp>\n");
 		return (1);
 	}
 
-	unsigned char* image;
 	size_t imageSize = 0;
+	unsigned char* image;
+	unsigned char* d_image;
+	unsigned char* output;
+	unsigned char* d_output;
 
-	// download an image (24-bit .bmp format only)
+
+	/* download an image (24-bit .bmp format only). */
 	image = readFile(argv[1], &imageSize);
 	if (NULL == image)
 		return (1);
 
-	unsigned char* d_image;
+	/* Allocate appropriate space in GPU to store downloaded image. */
 	if (cudaMalloc(&d_image, imageSize)) {
 		fprintf(stderr, "Failed to allocate memory for d_image array\n");
 		free(image);
 		return (1);
 	}
 
-	unsigned char* output = (unsigned char*)malloc(imageSize);
-	if (NULL == output) {
-		fprintf(stderr, "Failed to allocate memory for the output array.\n");
-		free(image);
-		return (1);
-	}
-
-	unsigned char* d_output;
-	if (cudaMalloc(&d_output, imageSize)) {
-		fprintf(stderr, "Failed to allocate memory for d_output array\n");
-		free(image);
-		free(output);
-		cudaFree(d_image);
-		return (1);
-	}
-
+	/* Copy image into GPU global memory. */
 	if (cudaMemcpy(d_image, image, imageSize, cudaMemcpyHostToDevice)) {
 		fprintf(stderr, "Failed to copy from image to d_image\n");
 		free(image);
@@ -163,9 +152,27 @@ main(int argc, char* argv[])
 		return (1);
 	}
 
-	// copy the header and BitInfo
+	/* The output buffer must equal in size with image. */
+	output = (unsigned char*)malloc(imageSize);
+	if (NULL == output) {
+		fprintf(stderr, "Failed to allocate memory for the output array.\n");
+		free(image);
+		return (1);
+	}
+
+	/* Allocate appropriate space in GPU to store output buffer data. */
+	if (cudaMalloc(&d_output, imageSize)) {
+		fprintf(stderr, "Failed to allocate memory for d_output array\n");
+		free(image);
+		free(output);
+		cudaFree(d_image);
+		return (1);
+	}
+
+	/* Copy both the header and BitInfo into output. */
 	memcpy(output, image, 64);
-	
+
+	/* Copy both the header and BitInfo into d_output. */
 	if (cudaMemcpy(d_output, output, 64, cudaMemcpyHostToDevice)) {
 		fprintf(stderr, "Failed to copy from output to d_output\n");
 		free(image);
@@ -175,23 +182,27 @@ main(int argc, char* argv[])
 		return (1);
 	}
 
+	/* Index 10 in BitmapFileHeader structure contains the absolute
+	 * offset to the pixel array. */
 	uint32_t offBits = 10;
+
+	/* Grab that offset. */
 	offBits = image[offBits + 1] << 8 | image[offBits];
 
 	int blockSize = 256;
 	unsigned int roundedSize = ceil(imageSize / (double)blockSize);
 
+	/* Target operation. */
 	gettimeofday(&start, NULL);
-	// perform color to grayscale convertion
-	toGrayscale<<<roundedSize, blockSize>>>(&d_image[offBits], imageSize - offBits, &d_output[offBits]);
+	toGrayscale<<<roundedSize, blockSize>>>(&d_image[offBits],
+							imageSize - offBits, &d_output[offBits]);
 	cudaDeviceSynchronize();
 	gettimeofday(&stop, NULL);
 
 	elapsed = GET_MS(start, stop);
 	printf("elapsed time: %.04f ms.\n", elapsed);
-	// compile the new block of image with the old
-	// metadata and store the output on the disk.
 
+	/* Copy resulting array from GPU global memory into DRAM. */
 	if (cudaMemcpy(output, d_output, imageSize, cudaMemcpyDeviceToHost)) {
 		fprintf(stderr, "Failed to copy from output to d_output\n");
 		free(image);
@@ -201,11 +212,16 @@ main(int argc, char* argv[])
 		return (1);
 	}
 
+	/* Store the hex representation for debug purposes. */
 	toHex(output, imageSize, "./hexDump.txt");
+
+	/* Store resulting array in .bmp file. */
 	writeFile("grayscaled.bmp", output, imageSize);
+
 	free(image);
 	free(output);
 	cudaFree(d_image);
 	cudaFree(d_output);
+	
 	return (0);
 }

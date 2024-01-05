@@ -119,31 +119,35 @@ main(int argc, char* argv[])
 	unsigned char* image;
 	size_t imageSize = 0;
 
-	// download an image (.bmp format)
+	/* download an image (24-bit .bmp format only). */
 	image = readFile(argv[1], &imageSize);
 	if (NULL == image)
 		return (1);
 	
 	unsigned char* output = malloc(imageSize);
 
-	// copy the header and BitInfo
+	/* Copy both the header and BitInfo into output. */
 	memcpy(output, image, 64);
 
+	/* Index 10 in BitmapFileHeader structure contains the absolute
+	 * offset to the pixel array. */
 	uint32_t offBits = 10;
 	offBits = image[offBits + 1] << 8 | image[offBits];
 
+	/* Target operation. */
 	gettimeofday(&start, NULL);
-	// perform color to grayscale convertion
 	toGrayscale(&image[offBits], imageSize - offBits, &output[offBits]);
 	gettimeofday(&stop, NULL);
 	
 	elapsed = GET_MS(start, stop);
 	printf("elapsed time: %.04f ms.\n", elapsed);
 
-	// compile the new block of image with the old
-	// metadata and store the output on the disk.
-//	toHex(output, imageSize, "./hexDump.txt");
+	/* Store the hex representation for debug purposes. */
+	toHex(output, imageSize, "./hexDump.txt");
+
+	/* Store resulting array in .bmp file. */
 	writeFile("grayscaled.bmp", output, imageSize);
+	
 	free(image);
 	free(output);
 
