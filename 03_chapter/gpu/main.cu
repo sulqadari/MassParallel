@@ -124,11 +124,16 @@ main(int argc, char* argv[])
 	}
 
 	size_t imageSize = 0;
-	unsigned char* image;
-	unsigned char* d_image;
-	unsigned char* output;
-	unsigned char* d_output;
+	unsigned char* image = NULL;
+	unsigned char* d_image = NULL;
+	unsigned char* output = NULL;
+	unsigned char* d_output = NULL;
 
+	/* Index 10 in BitmapFileHeader structure contains the absolute
+	 * offset to the pixel array. */
+	uint32_t offBits = 10;
+	int blockSize = 256;
+	unsigned int roundedSize;
 
 	/* download an image (24-bit .bmp format only). */
 	image = readFile(argv[1], &imageSize);
@@ -138,35 +143,26 @@ main(int argc, char* argv[])
 	/* Allocate appropriate space in GPU to store downloaded image. */
 	if (cudaMalloc(&d_image, imageSize)) {
 		fprintf(stderr, "Failed to allocate memory for d_image array\n");
-		free(image);
-		return (1);
+		goto _done;
 	}
 
 	/* Copy image into GPU global memory. */
 	if (cudaMemcpy(d_image, image, imageSize, cudaMemcpyHostToDevice)) {
 		fprintf(stderr, "Failed to copy from image to d_image\n");
-		free(image);
-		free(output);
-		cudaFree(d_image);
-		cudaFree(d_output);
-		return (1);
+		goto _done;
 	}
 
 	/* The output buffer must equal in size with image. */
 	output = (unsigned char*)malloc(imageSize);
 	if (NULL == output) {
 		fprintf(stderr, "Failed to allocate memory for the output array.\n");
-		free(image);
-		return (1);
+		goto _done;
 	}
 
 	/* Allocate appropriate space in GPU to store output buffer data. */
 	if (cudaMalloc(&d_output, imageSize)) {
 		fprintf(stderr, "Failed to allocate memory for d_output array\n");
-		free(image);
-		free(output);
-		cudaFree(d_image);
-		return (1);
+		goto _done;
 	}
 
 	/* Copy both the header and BitInfo into output. */
@@ -175,22 +171,13 @@ main(int argc, char* argv[])
 	/* Copy both the header and BitInfo into d_output. */
 	if (cudaMemcpy(d_output, output, 64, cudaMemcpyHostToDevice)) {
 		fprintf(stderr, "Failed to copy from output to d_output\n");
-		free(image);
-		free(output);
-		cudaFree(d_image);
-		cudaFree(d_output);
-		return (1);
+		goto _done;
 	}
-
-	/* Index 10 in BitmapFileHeader structure contains the absolute
-	 * offset to the pixel array. */
-	uint32_t offBits = 10;
 
 	/* Grab that offset. */
 	offBits = image[offBits + 1] << 8 | image[offBits];
 
-	int blockSize = 256;
-	unsigned int roundedSize = ceil(imageSize / (double)blockSize);
+	roundedSize = ceil(imageSize / (double)blockSize);
 
 	/* Target operation. */
 	gettimeofday(&start, NULL);
@@ -205,11 +192,7 @@ main(int argc, char* argv[])
 	/* Copy resulting array from GPU global memory into DRAM. */
 	if (cudaMemcpy(output, d_output, imageSize, cudaMemcpyDeviceToHost)) {
 		fprintf(stderr, "Failed to copy from output to d_output\n");
-		free(image);
-		free(output);
-		cudaFree(d_image);
-		cudaFree(d_output);
-		return (1);
+		goto _done;
 	}
 
 	/* Store the hex representation for debug purposes. */
@@ -218,10 +201,11 @@ main(int argc, char* argv[])
 	/* Store resulting array in .bmp file. */
 	writeFile("grayscaled.bmp", output, imageSize);
 
+_done:
 	free(image);
 	free(output);
 	cudaFree(d_image);
 	cudaFree(d_output);
-	
+
 	return (0);
 }
