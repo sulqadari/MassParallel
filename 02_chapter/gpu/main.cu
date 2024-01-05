@@ -31,7 +31,7 @@ main(int argc, char* argv[])
 {
 	struct timeval start, stop;
 	double elapsed;
-	int length = 1 << 24;	// 16 777 216 ; 29 == 536 870 912
+	int length = 1 << 24;	// 16 777 216
 
 	if (argc > 1)
 		length = 1 << strtol(argv[1], NULL, 10);		
