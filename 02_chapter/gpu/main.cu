@@ -30,8 +30,10 @@ int
 main(int argc, char* argv[])
 {
 	struct timeval start, stop;
-	double elapsed;
+	double elapsed = 0;
 	int length = 1 << 24;	// 16 777 216
+	int blockSize = 256;
+	unsigned int roundedSize = 0;
 
 	if (argc > 1)
 		length = 1 << strtol(argv[1], NULL, 10);		
@@ -42,44 +44,30 @@ main(int argc, char* argv[])
 	initArray(x, length, 1.0f);
 	initArray(y, length, 2.0f);
 
-	float* d_x;
-	float* d_y;
+	float* d_x = NULL;
+	float* d_y = NULL;
 
 	if (cudaMalloc(&d_x, length * sizeof(float))) {
 		fprintf(stderr, "Failed to allocate memory for d_x\n");
-		free(x);
-		free(y);
-		return (1);
+		goto _done;
 	}
 
 	if (cudaMalloc(&d_y, length * sizeof(float))) {
-		fprintf(stderr, "Failed to allocate memory for d_y\n");
-		free(x);
-		free(y);
-		cudaFree(d_x);
-		return (1);
+		fprintf(stderr, "Failed to allocate memory for d_x\n");
+		goto _done;
 	}
 
 	if (cudaMemcpy(d_x, x, length, cudaMemcpyHostToDevice)) {
 		fprintf(stderr, "Failed to copy from x to d_x\n");
-		free(x);
-		free(y);
-		cudaFree(d_x);
-		cudaFree(d_y);
-		return (1);
+		goto _done;
 	}
 
 	if (cudaMemcpy(d_y, y, length, cudaMemcpyHostToDevice)) {
 		fprintf(stderr, "Failed to copy from y to d_y\n");
-		free(x);
-		free(y);
-		cudaFree(d_x);
-		cudaFree(d_y);
-		return (1);
+		goto _done;
 	}
 
-	int blockSize = 256;
-	unsigned int roundedSize = ceil(length / (double)blockSize);
+	roundedSize = ceil(length / (double)blockSize);
 
 	gettimeofday(&start, NULL);
 	add<<<roundedSize, blockSize>>>(d_x, d_y, length);
@@ -89,6 +77,7 @@ main(int argc, char* argv[])
 	elapsed = GET_MS(start, stop);
 	printf("elapsed time: %.04f ms.\n", elapsed);
 
+_done:
 	free(x);
 	free(y);
 	cudaFree(d_x);

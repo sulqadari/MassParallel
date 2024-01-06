@@ -44,7 +44,7 @@ main(int argc, char* argv[])
 
 	if (argc > 1)
 		length = 1 << strtol(argv[1], NULL, 10);		
-	
+		
 	float* x = (float*)malloc(length * sizeof(float));
 	float* y = (float*)malloc(length * sizeof(float));
 
