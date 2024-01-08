@@ -85,33 +85,64 @@ readFile(const char* path, size_t* fileSize)
 	return buffer;
 }
 
+// static __global__ void
+// toGrayscale(unsigned char* image, uint32_t imageSize,
+// 								unsigned char* output)
+// {
+// 	unsigned char r;
+// 	unsigned char g;
+// 	unsigned char b;
+// 	unsigned char gray;
+
+// 	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+// 	// Each third subsequent thread only shall be aplied
+// 	if ((index % 0x03))
+// 		return;
+	
+// 	if (index >= imageSize)
+// 		return;
+	
+// 	r = image[index];
+// 	g = image[index + 1];
+// 	b = image[index + 2];
+	
+// 	gray = (0.21f * r) + (0.71f * g) + (0.07f * b);
+// 	output[index] = gray;
+// 	output[index + 1] = gray;
+// 	output[index + 2] = gray;
+// }
+
 static __global__ void
-toGrayscale(unsigned char* image, uint32_t imageSize,
-								unsigned char* output)
+toGrayscale(unsigned char* image, uint32_t width, uint32_t height,
+											unsigned char* output)
 {
 	unsigned char r;
 	unsigned char g;
 	unsigned char b;
 	unsigned char gray;
 
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	uint32_t col = blockIdx.x * blockDim.x + threadIdx.x;
+	uint32_t row = blockIdx.y * blockDim.y + threadIdx.y;
+	
+	if (col % 0x03)
+		return;
 
-	// Each third subsequent thread only shall be aplied
-	if ((index % 0x03))
+	if (!(col < width && row < height))
 		return;
-	
-	if (index >= imageSize)
-		return;
-	
-	r = image[index];
-	g = image[index + 1];
-	b = image[index + 2];
-	
+
+	uint32_t offset = (row * width + col);
+
+	r = image[offset];
+	g = image[offset + 1];
+	b = image[offset + 2];
+
 	gray = (0.21f * r) + (0.71f * g) + (0.07f * b);
-	output[index] = gray;
-	output[index + 1] = gray;
-	output[index + 2] = gray;
+	output[offset] = gray;
+	output[offset + 1] = gray;
+	output[offset + 2] = gray;
 }
+
 
 int
 main(int argc, char* argv[])
@@ -123,18 +154,22 @@ main(int argc, char* argv[])
 		return (1);
 	}
 
+	/* Index 10 in BitmapFileHeader structure contains the absolute
+	 * offset to the pixel array. */
+	uint32_t offBits = 10;
 	size_t imageSize = 0;
+	size_t imageWidth = 18;		/* Index of width in BitmapFileHeader */
+	size_t imageHeight = 22;	/* Index of height in BitmapFileHeader */
+	dim3 grid;
+	dim3 block;
+
 	unsigned char* image = NULL;
 	unsigned char* d_image = NULL;
 	unsigned char* output = NULL;
 	unsigned char* d_output = NULL;
 
-	/* Index 10 in BitmapFileHeader structure contains the absolute
-	 * offset to the pixel array. */
-	uint32_t offBits = 10;
-	int blockSize = 256;
-	unsigned int roundedSize;
-
+	int threadCount = 256;
+	unsigned int blockCount;
 	/* download an image (24-bit .bmp format only). */
 	image = readFile(argv[1], &imageSize);
 	if (NULL == image)
@@ -174,15 +209,37 @@ main(int argc, char* argv[])
 		goto _done;
 	}
 
-	/* Grab that offset. */
-	offBits = image[offBits + 1] << 8 | image[offBits];
+	/* Grab respective offsets. */
+	offBits		= image[offBits + 1] << 8 | image[offBits];
+	imageWidth	= image[imageWidth + 1] << 8 | image[imageWidth];
+	imageHeight	= image[imageHeight + 1] << 8 | image[imageHeight];	
 
-	roundedSize = ceil(imageSize / (double)blockSize);
+	// grid.x = ceil(imageWidth / (double)threadCount);
+	// grid.y = ceil(imageHeight / (double)threadCount);
+
+	grid.x = imageWidth;
+	grid.y = imageHeight;
+	grid.z = 1;
+
+	block.x = 16;
+	block.y = 16;
+	block.z = 1;
+
+	printf("grid\nx: %d\ny: %d\nz: %d\nblock\nx: %d\ny: %d\nz: %d\n",
+			grid.x, grid.y, grid.z, block.x, block.y, block.z);
+	
+	printf("width: %zu\nheight: %zu\n", imageWidth, imageHeight);
+
+	// blockCount = ceil(imageSize / (double)threadCount);
 
 	/* Target operation. */
 	gettimeofday(&start, NULL);
-	toGrayscale<<<roundedSize, blockSize>>>(&d_image[offBits],
-							imageSize - offBits, &d_output[offBits]);
+	// toGrayscale<<<blockCount, threadCount>>>(&d_image[offBits],
+	// 						imageSize - offBits, &d_output[offBits]);
+
+	toGrayscale<<<grid, block>>>(&d_image[offBits],
+							imageWidth, imageHeight, &d_output[offBits]);
+
 	cudaDeviceSynchronize();
 	gettimeofday(&stop, NULL);
 
@@ -191,7 +248,7 @@ main(int argc, char* argv[])
 
 	/* Copy resulting array from GPU global memory into DRAM. */
 	if (cudaMemcpy(output, d_output, imageSize, cudaMemcpyDeviceToHost)) {
-		fprintf(stderr, "Failed to copy from output to d_output\n");
+		fprintf(stderr, "Failed to copy from device to host\n");
 		goto _done;
 	}
 
