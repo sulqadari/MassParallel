@@ -1,6 +1,6 @@
 #include "vector/vector.h"
 
-uint8_t
+CUDA_HD uint8_t
 push_value(Vector* vec, uint8_t value)
 {
 	if (vec->current >= vec->length) {
@@ -14,7 +14,7 @@ push_value(Vector* vec, uint8_t value)
 	return (0);
 }
 
-uint8_t
+CUDA_HD uint8_t
 pop_value(Vector* vec)
 {
 	if (vec->current <= 0) {
@@ -26,7 +26,7 @@ pop_value(Vector* vec)
 	return vec->buff[--vec->current];
 }
 
-uint8_t
+CUDA_HD uint8_t
 get_value(Vector* vec)
 {
 	/* The corner case: the buffer is empty, thus return a value at index zero. */
@@ -38,19 +38,19 @@ get_value(Vector* vec)
 	
 }
 
-int8_t
+CUDA_HD int8_t
 is_empty(Vector* vec)
 {
 	return vec->current <= 0 ? 1 : 0;
 }
 
-int8_t
+CUDA_HD int8_t
 is_full(Vector* vec)
 {
 	return vec->current >= vec->length ? 1 : 0;
 }
 
-uint8_t
+CUDA_HOST uint8_t
 init_vector(Vector* vec, uint32_t length)
 {
 	vec->buff = (uint8_t*)malloc(length);
@@ -63,13 +63,13 @@ init_vector(Vector* vec, uint32_t length)
 	return (0);
 }
 
-void
+CUDA_HOST void
 free_vector(Vector* vec)
 {
 	free(vec->buff);
 }
 
-int8_t
+CUDA_HD int8_t
 cmp_length(Vector* first, Vector* second)
 {
 	if (first->length > second->length)
@@ -81,10 +81,10 @@ cmp_length(Vector* first, Vector* second)
 	return (0);
 }
 
-void
-add_vectors(Vector* first, Vector* second, Vector* result, int32_t length)
+CUDA_GLOBAL void
+add_vectors(uint8_t* first, uint8_t* second, uint8_t* result, int32_t length)
 {
-	for (uint32_t i = 0; i < length; ++i) {
-		result->buff[i] = first->buff[i] + second->buff[i];
-	}
+	uint32_t i = threadIdx.x + blockIdx.x * blockDim.x;
+	if (i < length)
+		result[i] = first[i] + second[i];
 }

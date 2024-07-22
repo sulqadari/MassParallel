@@ -8,6 +8,7 @@
 
 #define VECTOR_SIZE (10000 * 1024)
 #define VECTORS_ARRAY_SIZE (3)
+#define CUDA_BLOCK_DIM 256
 
 static void
 set_random(Vector* vec)
@@ -41,7 +42,10 @@ main(int argc, char*argv[])
 	struct timeval start, stop;
 	double elapsed;
 	uint32_t length = 0;
+	cudaError_t err = cudaSuccess;
 	Vector vectors[VECTORS_ARRAY_SIZE];
+	
+	uint8_t *dev_first, *dev_second, *dev_result;
 
 	if (init_vectors(vectors)) {
 		printf("ERROR: failed to initialized one of the vectors.\n");
@@ -51,7 +55,27 @@ main(int argc, char*argv[])
 	set_random(&vectors[0]);
 	set_random(&vectors[1]);
 
-	/* Use the lesser length value to avoid array boundary violation. */
+	cudaMalloc(&dev_first, vectors[0].length * sizeof(uint8_t));
+	cudaDeviceSynchronize(); err = cudaGetLastError();
+	if (err != cudaSuccess) {
+		printf("ERROR: %s\nsource: %s\nline: %d\n", cudaGetErrorString(err), __FILE__, __LINE__);
+		exit(1);
+	}
+
+	cudaMalloc(&dev_second, vectors[1].length * sizeof(uint8_t));
+	cudaDeviceSynchronize(); err = cudaGetLastError();
+	if (err != cudaSuccess) {
+		printf("ERROR: %s\nsource: %s\nline: %d\n", cudaGetErrorString(err), __FILE__, __LINE__);
+		exit(1);
+	}
+
+	cudaMalloc(&dev_result, vectors[2].length * sizeof(uint8_t));
+	cudaDeviceSynchronize(); err = cudaGetLastError();
+	if (err != cudaSuccess) {
+		printf("ERROR: %s\nsource: %s\nline: %d\n", cudaGetErrorString(err), __FILE__, __LINE__);
+		exit(1);
+	}
+
 	if (cmp_length(&vectors[0], &vectors[1]) < 0) {
 		length = vectors[0].length;
 	} else {
@@ -62,8 +86,13 @@ main(int argc, char*argv[])
 		
 		gettimeofday(&start, NULL);
 		
-		for (uint32_t j = 0; j < 1000; ++j)
-			add_vectors(&vectors[0], &vectors[1], &vectors[2], length);
+		for (volatile uint32_t j = 0; j < 1000; ++j) {
+			add_vectors<<<1 + length / CUDA_BLOCK_DIM, CUDA_BLOCK_DIM>>>(dev_first, dev_second, dev_result, length);
+			cudaDeviceSynchronize(); err = cudaGetLastError();
+			if (err != cudaSuccess) {
+				printf("ERROR: %s\nsource: %s\nline: %d\n", cudaGetErrorString(err), __FILE__, __LINE__);
+			}
+		}
 		
 		gettimeofday(&stop, NULL);
 
@@ -73,6 +102,9 @@ main(int argc, char*argv[])
 
 _free_vectors:
 	free_vectors(vectors);
+	cudaFree(dev_first);
+	cudaFree(dev_second);
+	cudaFree(dev_result);
 
 	return (0);
 }

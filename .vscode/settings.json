@@ -3,7 +3,13 @@
 		"*.fn": "java",
 		"00_Preface": "markdown",
 		"*.tivm": "javascript",
-		"stdint.h": "c",
-		"vector.h": "c"
+		"string_view": "cpp",
+		"bitset": "cpp",
+		"__locale": "cpp",
+		"__string": "cpp",
+		"string": "cpp",
+		"chrono": "c",
+		"utility": "c",
+		"memory": "c"
 	}
 }
