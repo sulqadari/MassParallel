@@ -87,7 +87,7 @@ main(int argc, char*argv[])
 		gettimeofday(&start, NULL);
 		
 		for (volatile uint32_t j = 0; j < 1000; ++j) {
-			add_vectors<<<1 + length / CUDA_BLOCK_DIM, CUDA_BLOCK_DIM>>>(dev_first, dev_second, dev_result, length);
+			add_vectors<<<ceil(length / (double)CUDA_BLOCK_DIM), CUDA_BLOCK_DIM>>>(dev_first, dev_second, dev_result, length);
 			cudaDeviceSynchronize(); err = cudaGetLastError();
 			if (err != cudaSuccess) {
 				printf("ERROR: %s\nsource: %s\nline: %d\n", cudaGetErrorString(err), __FILE__, __LINE__);
