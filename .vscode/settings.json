@@ -1,0 +1,15 @@
+{
+	"files.associations": {
+		"*.fn": "java",
+		"00_Preface": "markdown",
+		"*.tivm": "javascript",
+		"string_view": "cpp",
+		"bitset": "cpp",
+		"__locale": "cpp",
+		"__string": "cpp",
+		"string": "cpp",
+		"chrono": "c",
+		"utility": "c",
+		"memory": "c"
+	}
+}
