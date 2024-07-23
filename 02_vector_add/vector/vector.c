@@ -82,9 +82,8 @@ cmp_length(Vector* first, Vector* second)
 }
 
 void
-add_vectors(Vector* first, Vector* second, Vector* result, int32_t length)
+add_vectors(uint8_t* first, uint8_t* second, uint8_t* result, int32_t length)
 {
-	for (uint32_t i = 0; i < length; ++i) {
-		result->buff[i] = first->buff[i] + second->buff[i];
-	}
+	for (uint32_t i = 0; i < length; ++i)
+		result[i] = first[i] + second[i];
 }

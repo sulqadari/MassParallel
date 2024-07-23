@@ -4,7 +4,7 @@ project(VecAdd VERSION 0.1 LANGUAGES C CUDA)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Ofast")
 set(BUILD_SHARED_LIBS NO)
 
-option(BUILD_CUDA_VERSION "Building CUDA version" YES)
+option(BUILD_CUDA_VERSION "Building CUDA version" NO)
 
 if(BUILD_CUDA_VERSION)
 	add_compile_definitions(

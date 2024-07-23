@@ -63,7 +63,7 @@ main(int argc, char*argv[])
 		gettimeofday(&start, NULL);
 		
 		for (uint32_t j = 0; j < 1000; ++j)
-			add_vectors(&vectors[0], &vectors[1], &vectors[2], length);
+			add_vectors(vectors[0].buff, vectors[1].buff, vectors[2].buff, length);
 		
 		gettimeofday(&stop, NULL);
 

@@ -10,6 +10,8 @@
 		"string": "cpp",
 		"chrono": "c",
 		"utility": "c",
-		"memory": "c"
+		"memory": "c",
+		"functional": "c",
+		"__config": "c"
 	}
 }

@@ -29,11 +29,6 @@ CUDA_HD uint8_t get_value(Vector* vec);
 CUDA_HOST uint8_t init_vector(Vector* vec, uint32_t length);
 CUDA_HOST void free_vector(Vector* vec);
 CUDA_HD int8_t cmp_length(Vector* first, Vector* second);
-
-#if defined (USE_CUDA)
 CUDA_GLOBAL void add_vectors(uint8_t* first, uint8_t* second, uint8_t* result, int32_t length);
-#else
-CUDA_GLOBAL void add_vectors(Vector* first, Vector* second, Vector* result, int32_t length);
-#endif /* USE_CUDA */
 
 #endif /* VECTOR_CUDA_H */
