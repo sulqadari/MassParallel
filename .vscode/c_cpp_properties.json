@@ -4,9 +4,11 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/02_vector_add",
-				"${workspaceFolder}/02_vector_add/src"
+				"${workspaceFolder}/02_vector_add/src",
+				"${workspaceFolder}/03_chapter/**"
             ],
             "defines": [
+				"EXECUTABLE_NAME"
 			],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",

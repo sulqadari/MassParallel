@@ -14,6 +14,17 @@
 		"functional": "c",
 		"__config": "c",
 		"cmath": "cpp",
-		"vector.h": "c"
+		"vector.h": "c",
+		"array": "cpp",
+		"initializer_list": "cpp",
+		"span": "cpp",
+		"format": "cpp",
+		"__hash_table": "cpp",
+		"__split_buffer": "cpp",
+		"deque": "cpp",
+		"queue": "cpp",
+		"random": "cpp",
+		"unordered_map": "cpp",
+		"vector": "cpp"
 	}
 }
