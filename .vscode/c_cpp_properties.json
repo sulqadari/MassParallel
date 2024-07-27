@@ -6,7 +6,8 @@
                 "${workspaceFolder}/02_vector_add",
 				"${workspaceFolder}/02_vector_add/src"
             ],
-            "defines": [],
+            "defines": [
+			],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "gnu++17",

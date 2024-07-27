@@ -6,14 +6,14 @@
 	(stop.tv_sec - start.tv_sec) * 1000.0 +	\
 	(stop.tv_usec - start.tv_usec) / 1000.0
 
-#define VECTOR_SIZE (10000 * 1024)
-#define VECTORS_ARRAY_SIZE (3)
-#define CUDA_BLOCK_DIM 256
+#define VECTOR_SIZE			(10000 * 1024)
+#define VECTORS_ARRAY_SIZE	(3)
+#define CUDA_BLOCK_DIM		256
 
 static void
 set_random(Vector* vec)
 {
-	uint32_t val = 0;
+	uint32_t val = 1;
 	while (!push_value(vec, val++)) { }
 }
 
@@ -41,11 +41,12 @@ main(int argc, char*argv[])
 {
 	struct timeval start, stop;
 	double elapsed;
-	uint32_t length = 0;
-	cudaError_t err = cudaSuccess;
+	uint32_t length = 0, count = 1000;
 	Vector vectors[VECTORS_ARRAY_SIZE];
-	
 	uint8_t *dev_first, *dev_second, *dev_result;
+
+	if (argc > 1)
+		count = strtoull(argv[1], NULL, 10);
 
 	if (init_vectors(vectors)) {
 		printf("ERROR: failed to initialized one of the vectors.\n");
@@ -56,55 +57,66 @@ main(int argc, char*argv[])
 	set_random(&vectors[1]);
 
 	cudaMalloc(&dev_first, vectors[0].length * sizeof(uint8_t));
-	cudaDeviceSynchronize(); err = cudaGetLastError();
-	if (err != cudaSuccess) {
-		printf("ERROR: %s\nsource: %s\nline: %d\n", cudaGetErrorString(err), __FILE__, __LINE__);
-		exit(1);
-	}
+	cudaDeviceSynchronize();
+	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
+
 
 	cudaMalloc(&dev_second, vectors[1].length * sizeof(uint8_t));
-	cudaDeviceSynchronize(); err = cudaGetLastError();
-	if (err != cudaSuccess) {
-		printf("ERROR: %s\nsource: %s\nline: %d\n", cudaGetErrorString(err), __FILE__, __LINE__);
-		exit(1);
-	}
+	cudaDeviceSynchronize();
+	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
 
 	cudaMalloc(&dev_result, vectors[2].length * sizeof(uint8_t));
-	cudaDeviceSynchronize(); err = cudaGetLastError();
-	if (err != cudaSuccess) {
-		printf("ERROR: %s\nsource: %s\nline: %d\n", cudaGetErrorString(err), __FILE__, __LINE__);
-		exit(1);
-	}
+	cudaDeviceSynchronize();
+	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
 
 	if (cmp_length(&vectors[0], &vectors[1]) < 0) {
 		length = vectors[0].length;
 	} else {
 		length = vectors[1].length;
 	}
+	
+	cudaMemcpy(dev_first, vectors[0].buff, length, cudaMemcpyHostToDevice);
+	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
+	
+	cudaMemcpy(dev_second, vectors[1].buff, length, cudaMemcpyHostToDevice);
+	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
 
-	for (uint32_t i = 0; i < 10; ++i) {
-		
-		gettimeofday(&start, NULL);
-		
-		for (volatile uint32_t j = 0; j < 1000; ++j) {
-			add_vectors<<<ceil(length / (double)CUDA_BLOCK_DIM), CUDA_BLOCK_DIM>>>(dev_first, dev_second, dev_result, length);
-			cudaDeviceSynchronize(); err = cudaGetLastError();
-			if (err != cudaSuccess) {
-				printf("ERROR: %s\nsource: %s\nline: %d\n", cudaGetErrorString(err), __FILE__, __LINE__);
-			}
-		}
-		
-		gettimeofday(&stop, NULL);
+	printf("\nBefore: ");
+	for (uint32_t i = 0; i < 16; ++i)
+		printf("%02X ", vectors[2].buff[i]);
+	
+	printf("\n");
 
-		elapsed = GET_MS(start, stop);
-		printf("%02d) elapsed time: %.04f ms.\n", i + 1, elapsed);
-	}
+	gettimeofday(&start, NULL);
+	
+
+	cuda_main<<<ceil(length / (double)CUDA_BLOCK_DIM), CUDA_BLOCK_DIM>>>(dev_first,
+																		dev_second,
+																		dev_result,
+																		length,
+																		count);
+	cudaDeviceSynchronize();
+	gettimeofday(&stop, NULL);
+
+	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
+
+	elapsed = GET_MS(start, stop);
+	printf("\nelapsed time: %.02f ms.\n", elapsed);
+
+	cudaMemcpy(vectors[2].buff, dev_result, length, cudaMemcpyDeviceToHost);
+	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
+
+	printf("\nAfter:  ");
+	for (uint32_t i = 0; i < 16; ++i)
+		printf("%02X ", vectors[2].buff[i]);
+	
+	printf("\n");
 
 _free_vectors:
-	free_vectors(vectors);
 	cudaFree(dev_first);
 	cudaFree(dev_second);
 	cudaFree(dev_result);
+	free_vectors(vectors);
 
 	return (0);
 }

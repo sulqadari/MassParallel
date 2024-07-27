@@ -12,6 +12,8 @@
 		"utility": "c",
 		"memory": "c",
 		"functional": "c",
-		"__config": "c"
+		"__config": "c",
+		"cmath": "cpp",
+		"vector.h": "c"
 	}
 }

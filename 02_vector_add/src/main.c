@@ -68,7 +68,7 @@ main(int argc, char*argv[])
 		gettimeofday(&stop, NULL);
 
 		elapsed = GET_MS(start, stop);
-		printf("%02d) elapsed time: %.04f ms.\n", i + 1, elapsed);
+		printf("%02d) elapsed time: %.02f ms.\n", i + 1, elapsed);
 	}
 
 _free_vectors:

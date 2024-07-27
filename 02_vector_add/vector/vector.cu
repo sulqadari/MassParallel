@@ -81,10 +81,17 @@ cmp_length(Vector* first, Vector* second)
 	return (0);
 }
 
-CUDA_GLOBAL void
+CUDA_DEVICE void
 add_vectors(uint8_t* first, uint8_t* second, uint8_t* result, int32_t length)
 {
-	uint32_t i = threadIdx.x + blockIdx.x * blockDim.x;
+	volatile int32_t i = threadIdx.x + blockIdx.x * blockDim.x;
 	if (i < length)
-		result[i] = first[i] + second[i];
+		result[i] += first[i] + second[i];
+}
+
+CUDA_GLOBAL void
+cuda_main(uint8_t* first, uint8_t* second, uint8_t* result, int32_t length, uint32_t count)
+{
+	for (volatile uint32_t j = 0; j < count; ++j)
+		add_vectors(first, second, result, length);
 }
