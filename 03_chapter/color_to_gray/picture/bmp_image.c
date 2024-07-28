@@ -145,7 +145,8 @@ bmp_color_to_gray(BMP_image* image)
 	uint8_t* buff		= &image->buff[header->pixels_offset];
 	uint32_t width		= info->pic_width;
 	uint32_t height		= info->pic_height;
-	
+	uint32_t channel    = info->bit_count;
+
 	uint8_t* result;
 
 	result = malloc(info->image_size);
@@ -154,17 +155,24 @@ bmp_color_to_gray(BMP_image* image)
 		return;
 	}
 
+	uint32_t pix_off;
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+
 	for (uint32_t col = 0; col < width; ++col) {
 
 		for (uint32_t row = 0; row < height; ++row) {
 
-			uint32_t gray_off = row * width + col;
-			uint32_t rgb_off = gray_off * info->bit_count;
-			uint8_t r = buff[rgb_off];
-			uint8_t g = buff[rgb_off + 1];
-			uint8_t b = buff[rgb_off + 2];
-			result[gray_off] = r * 0.21 + g * 0.71 + b * 0.07;
+			pix_off = (row * width + col) * channel;
 			
+			r = buff[pix_off    ];
+			g = buff[pix_off + 1];
+			b = buff[pix_off + 2];
+
+			result[pix_off    ] = r * 0.21 + g * 0.71 + b * 0.07;
+			result[pix_off + 1] = r * 0.21 + g * 0.71 + b * 0.07;
+			result[pix_off + 2] = r * 0.21 + g * 0.71 + b * 0.07;
 		}
 	}
 
