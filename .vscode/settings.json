@@ -25,6 +25,7 @@
 		"queue": "cpp",
 		"random": "cpp",
 		"unordered_map": "cpp",
-		"vector": "cpp"
+		"vector": "cpp",
+		"bmp_image.h": "c"
 	}
 }

@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/02_vector_add",
 				"${workspaceFolder}/02_vector_add/src",
-				"${workspaceFolder}/03_chapter/**"
+				"${workspaceFolder}/03_chapter/color_to_gray"
             ],
             "defines": [
 				"EXECUTABLE_NAME"
