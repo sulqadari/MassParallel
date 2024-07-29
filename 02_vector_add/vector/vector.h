@@ -11,18 +11,18 @@
 	#define CUDA_DEVICE	__device__
 	#define CUDA_HD		__host__ __device__
 
-	#define CUDA_ASSERT_ERROR(status_, _goto)			\
+	#define CUDA_ASSERT_ERROR(status_)					\
 	do {												\
 		if (status_ != cudaSuccess) {					\
 			printf("ERROR: %s\nsource: %s\nline: %d\n",	\
 					cudaGetErrorString(status_),		\
 					__FILE__, __LINE__);				\
-			goto _goto;									\
+			break;									\
 		}												\
 	} while (0)
 
 #else
-	#define CUDA_ASSERT_ERROR(status_, _goto)
+	#define CUDA_ASSERT_ERROR(status_)
 	#define CUDA_GLOBAL
 	#define CUDA_HOST
 	#define CUDA_DEVICE

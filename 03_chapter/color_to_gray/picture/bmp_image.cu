@@ -20,7 +20,7 @@ get_version(BMP_Info* info)
 	return versions[i].name;
 }
 
-void
+CUDA_HOST void
 bmp_print_info(BMP_image* image)
 {
 	BMP_Header_t* header = &image->info.header;
@@ -37,7 +37,7 @@ bmp_print_info(BMP_image* image)
 	printf("Image size:        %d\n", info->image_size);
 }
 
-uint8_t
+CUDA_HOST uint8_t
 bmp_load_file(BMP_image* image, const char* path)
 {
 	FILE* file;
@@ -55,7 +55,7 @@ bmp_load_file(BMP_image* image, const char* path)
 	file_size = ftell(file);		/* How far we are from start of the file? */
 	rewind(file);				/* Rewind file ptr back to the beginning. */
 
-	image->buff = malloc(file_size);
+	image->buff = (uint8_t*)malloc(file_size);
 	if (NULL == image->buff) {
 		fprintf(stderr, "Failed to allocate memory for source file '%s'.\n", path);
 		res = 1;
@@ -79,7 +79,7 @@ _close_file:
 	return (res);
 }
 
-void
+CUDA_HOST void
 bmp_save_file(BMP_image* image, const char* path)
 {
 	FILE* file;
@@ -101,21 +101,21 @@ bmp_save_file(BMP_image* image, const char* path)
 	fclose(file);
 }
 
-static uint32_t
+CUDA_HOST static uint32_t
 get_int(uint8_t* buff)
 {
 	return (((uint32_t)buff[3] << 24) | ((uint32_t)buff[2] << 16) |
 			((uint32_t)buff[1] << 8)  | (uint32_t)buff[0]);
 }
 
-static uint32_t
+CUDA_HOST static uint32_t
 get_short(uint8_t* buff)
 {
 	return (((uint32_t)buff[1] << 8) | (uint32_t)buff[0]);
 }
 
 
-void
+CUDA_HOST void
 bmp_init_image(BMP_image* image)
 {
 	uint8_t* buff = image->buff;
@@ -133,40 +133,33 @@ bmp_init_image(BMP_image* image)
 	info->image_size = get_int(&buff[OFFSET_BMP_INFO_IMG_SIZE]);
 }
 
-void
+CUDA_HOST void
 bmp_free(BMP_image* image)
 {
 	free(image->buff);
 }
 
-void
-bmp_color_to_gray(BMP_image* image)
+CUDA_GLOBAL void
+bmp_color_to_gray(uint8_t* pixels, uint32_t width, uint32_t height, uint32_t channel)
 {
-	BMP_Header_t* header = &image->info.header;
-	BMP_Info* info		= &image->info;
-	uint8_t* buff		= &image->buff[header->pixels_offset];
-	uint32_t width		= info->pic_width;
-	uint32_t height		= info->pic_height;
-	uint32_t channel    = info->bit_count;
-
 	uint32_t pix_off;
 	uint8_t r;
 	uint8_t g;
 	uint8_t b;
+	
+	uint32_t col = blockIdx.x * blockDim.x + threadIdx.x;
+	uint32_t row = blockIdx.y * blockDim.y + threadIdx.y;
 
-	for (uint32_t row = 0; row < height; ++row) {
+	if (col >= width && row >= height)
+		return;
+	
+	pix_off = (row * width + col) * channel;
+	
+	r = pixels[pix_off + 0];
+	g = pixels[pix_off + 1];
+	b = pixels[pix_off + 2];
 
-		for (uint32_t col = 0; col < width; ++col) {
-
-			pix_off = (row * width + col) * channel;
-			
-			r = buff[pix_off + 0];
-			g = buff[pix_off + 1];
-			b = buff[pix_off + 2];
-
-			buff[pix_off + 0] = r * 0.21 + g * 0.71 + b * 0.07;
-			buff[pix_off + 1] = r * 0.21 + g * 0.71 + b * 0.07;
-			buff[pix_off + 2] = r * 0.21 + g * 0.71 + b * 0.07;
-		}
-	}
+	pixels[pix_off + 0] = r * 0.21 + g * 0.71 + b * 0.07;
+	pixels[pix_off + 1] = r * 0.21 + g * 0.71 + b * 0.07;
+	pixels[pix_off + 2] = r * 0.21 + g * 0.71 + b * 0.07;
 }

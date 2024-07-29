@@ -48,71 +48,71 @@ main(int argc, char*argv[])
 	if (argc > 1)
 		count = strtoull(argv[1], NULL, 10);
 
-	if (init_vectors(vectors)) {
-		printf("ERROR: failed to initialized one of the vectors.\n");
-		goto _free_vectors;
-	}
+	do {
+		if (init_vectors(vectors)) {
+			printf("ERROR: failed to initialized one of the vectors.\n");
+			break;
+		}
 
-	set_random(&vectors[0]);
-	set_random(&vectors[1]);
+		set_random(&vectors[0]);
+		set_random(&vectors[1]);
 
-	cudaMalloc(&dev_first, vectors[0].length * sizeof(uint8_t));
-	cudaDeviceSynchronize();
-	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
+		cudaMalloc(&dev_first, vectors[0].length * sizeof(uint8_t));
+		cudaDeviceSynchronize();
+		CUDA_ASSERT_ERROR(cudaGetLastError());
 
 
-	cudaMalloc(&dev_second, vectors[1].length * sizeof(uint8_t));
-	cudaDeviceSynchronize();
-	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
+		cudaMalloc(&dev_second, vectors[1].length * sizeof(uint8_t));
+		cudaDeviceSynchronize();
+		CUDA_ASSERT_ERROR(cudaGetLastError());
 
-	cudaMalloc(&dev_result, vectors[2].length * sizeof(uint8_t));
-	cudaDeviceSynchronize();
-	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
+		cudaMalloc(&dev_result, vectors[2].length * sizeof(uint8_t));
+		cudaDeviceSynchronize();
+		CUDA_ASSERT_ERROR(cudaGetLastError());
 
-	if (cmp_length(&vectors[0], &vectors[1]) < 0) {
-		length = vectors[0].length;
-	} else {
-		length = vectors[1].length;
-	}
-	
-	cudaMemcpy(dev_first, vectors[0].buff, length, cudaMemcpyHostToDevice);
-	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
-	
-	cudaMemcpy(dev_second, vectors[1].buff, length, cudaMemcpyHostToDevice);
-	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
+		if (cmp_length(&vectors[0], &vectors[1]) < 0) {
+			length = vectors[0].length;
+		} else {
+			length = vectors[1].length;
+		}
+		
+		cudaMemcpy(dev_first, vectors[0].buff, length, cudaMemcpyHostToDevice);
+		CUDA_ASSERT_ERROR(cudaGetLastError());
+		
+		cudaMemcpy(dev_second, vectors[1].buff, length, cudaMemcpyHostToDevice);
+		CUDA_ASSERT_ERROR(cudaGetLastError());
 
-	printf("\nBefore: ");
-	for (uint32_t i = 0; i < 16; ++i)
-		printf("%02X ", vectors[2].buff[i]);
-	
-	printf("\n");
+		printf("\nBefore: ");
+		for (uint32_t i = 0; i < 16; ++i)
+			printf("%02X ", vectors[2].buff[i]);
+		
+		printf("\n");
 
-	gettimeofday(&start, NULL);
-	
+		gettimeofday(&start, NULL);
+		
+		dim3 grid_(ceil(length / (double)CUDA_BLOCK_DIM), 1, 1);
+		dim3 block_(CUDA_BLOCK_DIM, 1, 1);
 
-	cuda_main<<<ceil(length / (double)CUDA_BLOCK_DIM), CUDA_BLOCK_DIM>>>(dev_first,
-																		dev_second,
-																		dev_result,
-																		length,
-																		count);
-	cudaDeviceSynchronize();
-	gettimeofday(&stop, NULL);
+		cuda_main<<<grid_, block_>>>(dev_first, dev_second, dev_result, length, count);
+		cudaDeviceSynchronize();
+		gettimeofday(&stop, NULL);
 
-	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
+		CUDA_ASSERT_ERROR(cudaGetLastError());
 
-	elapsed = GET_MS(start, stop);
-	printf("\nelapsed time: %.02f ms.\n", elapsed);
+		elapsed = GET_MS(start, stop);
+		printf("\nelapsed time: %.02f ms.\n", elapsed);
 
-	cudaMemcpy(vectors[2].buff, dev_result, length, cudaMemcpyDeviceToHost);
-	CUDA_ASSERT_ERROR(cudaGetLastError(), _free_vectors);
+		cudaMemcpy(vectors[2].buff, dev_result, length, cudaMemcpyDeviceToHost);
+		CUDA_ASSERT_ERROR(cudaGetLastError());
 
-	printf("\nAfter:  ");
-	for (uint32_t i = 0; i < 16; ++i)
-		printf("%02X ", vectors[2].buff[i]);
-	
-	printf("\n");
+		printf("\nAfter:  ");
+		for (uint32_t i = 0; i < 16; ++i)
+			printf("%02X ", vectors[2].buff[i]);
+		
+		printf("\n");
 
-_free_vectors:
+	} while (0);
+
 	cudaFree(dev_first);
 	cudaFree(dev_second);
 	cudaFree(dev_result);

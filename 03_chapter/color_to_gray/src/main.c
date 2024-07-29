@@ -21,16 +21,28 @@ usage(void)
 int
 main(int argc, char*argv[])
 {
+	struct timeval start, stop;
+	double elapsed;
 	BMP_image picture;
 
 	if (argc < 3)
 		usage();
 	
-	bmp_load_file(&picture, argv[1]);
+	if (bmp_load_file(&picture, argv[1]))
+		return (1);
+
 	bmp_init_image(&picture);
 	bmp_print_info(&picture);
+
+	gettimeofday(&start, NULL);
 	bmp_color_to_gray(&picture);
+	gettimeofday(&stop, NULL);
+	
+	elapsed = GET_MS(start, stop);
+	printf("elapsed time: %.02f ms.\n", elapsed);
+
 	bmp_save_file(&picture, argv[2]);
+
 	bmp_free(&picture);
 
 	return (0);

@@ -24,6 +24,30 @@
 #define ENUM_BMP_VERSION_5				124
 #define ENUM_BMP_VERSION_UNKNOWN		255
 
+#if defined (USE_CUDA)
+	#define CUDA_GLOBAL	__global__
+	#define CUDA_HOST	__host__
+	#define CUDA_DEVICE	__device__
+	#define CUDA_HD		__host__ __device__
+
+	#define CUDA_ASSERT_ERROR(status_)					\
+	do {												\
+		if (status_ != cudaSuccess) {					\
+			printf("ERROR: %s\nfile: %s\nline: %d\n",	\
+					cudaGetErrorString(status_),		\
+					__FILE__, __LINE__);				\
+			break;									\
+		}												\
+	} while (0)
+
+#else
+	#define CUDA_ASSERT_ERROR(status_)
+	#define CUDA_GLOBAL
+	#define CUDA_HOST
+	#define CUDA_DEVICE
+	#define CUDA_HD
+#endif
+
 typedef struct BMP_version {
 	uint8_t code;
 	char* name;
@@ -56,11 +80,15 @@ typedef struct BMPicture_t {
 } BMP_image;
 
 
-void bmp_load_file(BMP_image* image, const char* path);
-void bmp_init_image(BMP_image* image);
-void bmp_print_info(BMP_image* image);
-void bmp_free(BMP_image* image);
-void bmp_color_to_gray(BMP_image* image);
-void bmp_save_file(BMP_image* image, const char* path);
+CUDA_HOST uint8_t bmp_load_file(BMP_image* image, const char* path);
+CUDA_HOST void bmp_init_image(BMP_image* image);
+CUDA_HOST void bmp_print_info(BMP_image* image);
+CUDA_HOST void bmp_free(BMP_image* image);
+CUDA_HOST void bmp_save_file(BMP_image* image, const char* path);
 
+#if defined (USE_CUDA)
+CUDA_GLOBAL void bmp_color_to_gray(uint8_t* pixels, uint32_t width, uint32_t height, uint32_t channel);
+#else
+CUDA_GLOBAL void bmp_color_to_gray(BMP_image* image);
+#endif /* USE_CUDA */
 #endif /* COLOR_TO_GRAY_H */

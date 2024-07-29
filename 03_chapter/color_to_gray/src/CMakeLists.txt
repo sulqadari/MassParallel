@@ -1,5 +1,5 @@
 if (BUILD_CUDA_VERSION)
-	add_executable(${EXECUTABLE_NAME} main.c)
+	add_executable(${EXECUTABLE_NAME} main.cu)
 else()
 	add_executable(${EXECUTABLE_NAME} main.c)
 endif()
