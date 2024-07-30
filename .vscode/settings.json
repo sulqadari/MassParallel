@@ -26,6 +26,9 @@
 		"random": "cpp",
 		"unordered_map": "cpp",
 		"vector": "cpp",
-		"bmp_image.h": "c"
+		"bmp_image.h": "c",
+		"stdlib.h": "c",
+		"cstdint": "c",
+		"string.h": "c"
 	}
 }
