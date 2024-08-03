@@ -139,27 +139,31 @@ bmp_free(BMP_image* image)
 	free(image->buff);
 }
 
+CUDA_HD int32_t _max(int a, int b) {
+    if (a >= b) { return a; } else { return b; }
+}
+CUDA_HD int32_t _min(int a, int b) {
+    if (a <= b) { return a; } else { return b; }
+}
+
 CUDA_GLOBAL void
-bmp_color_to_gray(uint8_t* pixels, uint32_t width, uint32_t height, uint32_t channel)
+bmp_blurring(uint8_t* outputImg, uint8_t* inputImg,
+			int32_t width, int32_t height, int32_t N)
 {
-	uint32_t pix_off;
-	uint8_t r;
-	uint8_t g;
-	uint8_t b;
-	
-	uint32_t col = blockIdx.x * blockDim.x + threadIdx.x;
-	uint32_t row = blockIdx.y * blockDim.y + threadIdx.y;
+	int32_t row = blockDim.y * blockIdx.y + threadIdx.y;
+    int32_t col = blockDim.x * blockIdx.x + threadIdx.x;
 
-	if (col >= width && row >= height)
-		return;
-	
-	pix_off = (row * width + col) * channel;
-	
-	r = pixels[pix_off + 0];
-	g = pixels[pix_off + 1];
-	b = pixels[pix_off + 2];
+    if (col >= width || row >= height) { return; }
 
-	pixels[pix_off + 0] = r * 0.21 + g * 0.71 + b * 0.07;
-	pixels[pix_off + 1] = r * 0.21 + g * 0.71 + b * 0.07;
-	pixels[pix_off + 2] = r * 0.21 + g * 0.71 + b * 0.07;
+    int32_t blurAreaSum = 0;
+    int32_t blurAreaSize = 0;
+	
+    for (int32_t row2 = _max(0, row-N); row2 <= _min(height, row+N); row2++) {
+        for (int32_t col2 = _max(0, col-N); col2 <= _min(width, col+N); col2++) {
+            blurAreaSum += inputImg[width * row2 + col2];
+            blurAreaSize++;
+        }
+    }
+
+    outputImg[width * row + col] = (uint8_t)(blurAreaSum / blurAreaSize);
 }

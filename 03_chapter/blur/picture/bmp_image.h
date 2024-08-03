@@ -87,7 +87,8 @@ CUDA_HOST void bmp_free(BMP_image* image);
 CUDA_HOST void bmp_save_file(BMP_image* image, const char* path);
 
 #if defined (USE_CUDA)
-CUDA_GLOBAL void bmp_blurring(uint8_t* pixels, uint32_t width, uint32_t height, uint32_t channel);
+CUDA_GLOBAL void bmp_blurring(uint8_t* outputImg, uint8_t* inputImg,
+							int32_t width, int32_t height, int32_t N);
 #else
 CUDA_GLOBAL void bmp_blurring(BMP_image* image);
 #endif /* USE_CUDA */

@@ -4,7 +4,7 @@ project(ColorToGray VERSION 0.1 LANGUAGES C CUDA)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Ofast")
 option(BUILD_SHARED_LIBS "Build libraries as shared" NO)
 
-option(BUILD_CUDA_VERSION "Building CUDA version" YES)
+option(BUILD_CUDA_VERSION "Building CUDA version" NO)
 
 if(BUILD_CUDA_VERSION)
 	set(EXECUTABLE_NAME "ColorToGrayscale_gpu")

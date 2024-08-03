@@ -26,7 +26,9 @@ main(int argc, char*argv[])
 	BMP_image picture;
 	BMP_Info* info;
 
-	uint8_t* pixels_d;
+	uint8_t* inputImg;
+	uint8_t* outputImg;
+
 	if (argc < 3)
 		usage();
 	
@@ -39,12 +41,16 @@ main(int argc, char*argv[])
 	info = &picture.info;
 
 	do {
-		cudaMalloc(&pixels_d, picture.info.image_size);
+		cudaMalloc(&inputImg, picture.info.image_size);
 		cudaDeviceSynchronize();
 		CUDA_ASSERT_ERROR(cudaGetLastError());
 
-		cudaMemcpy(pixels_d, &picture.buff[picture.info.header.pixels_offset],
-					picture.info.image_size, cudaMemcpyHostToDevice);
+		cudaMemcpy(inputImg, &picture.buff[picture.info.header.pixels_offset],
+							picture.info.image_size, cudaMemcpyHostToDevice);
+		cudaDeviceSynchronize();
+		CUDA_ASSERT_ERROR(cudaGetLastError());
+
+		cudaMalloc(&outputImg, picture.info.image_size);
 		cudaDeviceSynchronize();
 		CUDA_ASSERT_ERROR(cudaGetLastError());
 
@@ -53,10 +59,10 @@ main(int argc, char*argv[])
 		dim3 grid_(ceil(picture.info.pic_width / 16.0), ceil(picture.info.pic_height / 16.0), 1);
 		dim3 block_(16, 16, 1);
 
-		bmp_color_to_gray<<<grid_, block_>>>(pixels_d,
+		bmp_blurring<<<grid_, block_>>>(outputImg, inputImg,
 											info->pic_width,
 											info->pic_height,
-											info->bit_count);
+											1);
 		cudaDeviceSynchronize();
 		CUDA_ASSERT_ERROR(cudaGetLastError());
 
@@ -65,12 +71,13 @@ main(int argc, char*argv[])
 		elapsed = GET_MS(start, stop);
 		printf("elapsed time: %.02f ms.\n", elapsed);
 
-		cudaMemcpy(&picture.buff[picture.info.header.pixels_offset], pixels_d,
+		cudaMemcpy(&picture.buff[picture.info.header.pixels_offset], outputImg,
 					picture.info.image_size, cudaMemcpyDeviceToHost);
 		bmp_save_file(&picture, argv[2]);
 	} while (0);
 
-	cudaFree(pixels_d);
+	cudaFree(inputImg);
+	cudaFree(outputImg);
 
 	bmp_free(&picture);
 

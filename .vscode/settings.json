@@ -29,6 +29,7 @@
 		"bmp_image.h": "c",
 		"stdlib.h": "c",
 		"cstdint": "c",
-		"string.h": "c"
+		"string.h": "c",
+		"algorithm": "c"
 	}
 }

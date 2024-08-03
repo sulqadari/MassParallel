@@ -8,7 +8,8 @@
 				"${workspaceFolder}/03_chapter/color_to_gray"
             ],
             "defines": [
-				"EXECUTABLE_NAME"
+				"EXECUTABLE_NAME",
+				"USE_CUDA"
 			],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
