@@ -3,6 +3,7 @@
 		"*.fn": "java",
 		"00_Preface": "markdown",
 		"*.tivm": "javascript",
+		"*.txt": "cmake",
 		"string_view": "cpp",
 		"bitset": "cpp",
 		"__locale": "cpp",
@@ -30,6 +31,20 @@
 		"stdlib.h": "c",
 		"cstdint": "c",
 		"string.h": "c",
-		"algorithm": "c"
+		"algorithm": "c",
+		"optional": "cpp",
+		"ratio": "cpp",
+		"system_error": "cpp",
+		"tuple": "cpp",
+		"type_traits": "cpp",
+		"variant": "cpp",
+		"charconv": "cpp",
+		"__bit_reference": "cpp",
+		"__functional_base": "cpp",
+		"__node_handle": "cpp",
+		"__memory": "cpp",
+		"iterator": "cpp",
+		"limits": "cpp",
+		"locale": "cpp"
 	}
 }
