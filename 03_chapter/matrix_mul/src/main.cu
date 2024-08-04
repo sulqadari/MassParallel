@@ -3,10 +3,10 @@
 #include <sys/time.h>
 #include "common.h"
 
-
 __host__ static void
 matrix_print(int32_t* mtx, uint32_t len, const char* label)
 {
+#if defined (PRINT_DEBUG)
 	printf("\n%s\n", label);
 	for (uint32_t row = 0; row < len; ++row) {
 		printf("\t\t");
@@ -15,6 +15,7 @@ matrix_print(int32_t* mtx, uint32_t len, const char* label)
 		}
 		printf("\n");
 	}
+#endif /* PRINT_DEBUG */
 }
 
 __host__ static void
@@ -55,25 +56,12 @@ kern_matrix_multiply(int32_t* first, int32_t* second, int32_t* output, uint32_t 
 	output[row * width + col] = value;
 }
 
-static void
-host_matrix_multiply(int32_t* first, int32_t* second, int32_t* output, uint32_t width)
-{
-	int32_t value = 0;
-	for (uint32_t row = 0; row < width; ++row) {
-
-		for (uint32_t col = 0; col < width; ++col) {
-			for (uint32_t k = 0; k < width; ++k){
-				value += first[row * width + k] * second[k * width + col];
-			}
-			output[row * width + col] += value;
-		}
-	}
-}
-
 int
 main(int argc, char* argv[])
 {
-	uint32_t width = 2;
+	uint32_t dim_ = 2;
+	uint32_t mem_size = ((dim_ * dim_) * sizeof(int32_t));
+
 	int32_t* first = NULL;
 	int32_t* second = NULL;
 	int32_t* output = NULL;
@@ -86,53 +74,61 @@ main(int argc, char* argv[])
 	double elapsed;
 
 	if (argc > 1) {
-		width = strtoull(argv[1], NULL, 10);
+		dim_ = strtoull(argv[1], NULL, 10);
+		mem_size = ((dim_ * dim_) * sizeof(int32_t));
 	}
 
 	/* Allocating memory */
-	hostMalloc(&first, width);
-	hostMalloc(&second, width);
-	hostMalloc(&output, width);
+	hostMalloc(&first,  mem_size);
+	hostMalloc(&second, mem_size);
+	hostMalloc(&output, mem_size);
 
-	cudaMalloc(&dev_first,  width * sizeof(int32_t));
+	cudaMalloc(&dev_first,  mem_size);
 	CUDA_ASSERT_ERROR();
-	cudaMalloc(&dev_second, width * sizeof(int32_t));
+	cudaMalloc(&dev_second, mem_size);
 	CUDA_ASSERT_ERROR();
-	cudaMalloc(&dev_output, width * sizeof(int32_t));
+	cudaMalloc(&dev_output, mem_size);
 	CUDA_ASSERT_ERROR();
 
 	/* Initialization. */
 	srand(time(NULL));
-	matrix_set_random(first, width);
-	matrix_set_random(second, width);
+	matrix_set_random(first, dim_);
+	matrix_set_random(second, dim_);
 	
-	cudaMemcpy(dev_first, first, width, cudaMemcpyHostToDevice);
+	printf(
+		"Matrix A: %.02f MB\n"
+		"Matrix B: %f MB\n",
+		(float)mem_size / (1024 * 1000),
+		(float)mem_size / (1024 * 1000)
+	);
+
+	matrix_print(first, dim_, "matrix A:");
+	matrix_print(second, dim_, "matrix B:");
+
+	cudaMemcpy(dev_first, first, mem_size, cudaMemcpyHostToDevice);
 	CUDA_ASSERT_ERROR();
-	cudaMemcpy(dev_second, second, width, cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_second, second, mem_size, cudaMemcpyHostToDevice);
 	CUDA_ASSERT_ERROR();
 
-	dim3 grid_(ceil(width / (double)32), ceil(width / (double)32), 1);
+	dim3 grid_(ceil(mem_size / (double)32), 1, 1);
 	dim3 block_(32, 32, 1);
 
 	/* Start point. */
 	gettimeofday(&start, NULL);
 
-	host_matrix_multiply(dev_first, dev_second, dev_output, width);
-	kern_matrix_multiply<<<grid_, block_>>>(dev_first, dev_second, dev_output, width);
+	kern_matrix_multiply<<<grid_, block_>>>(dev_first, dev_second, dev_output, dim_);
 	CUDA_ASSERT_ERROR();
 
 	/* logging result. */
 	gettimeofday(&stop, NULL);
 
 	elapsed = GET_MS(start, stop);
-	printf("\nelapsed time: %.02f ms.\n", elapsed);
+	printf("elapsed time: %.02f ms.\n\n", elapsed);
 	
-	cudaMemcpy(output, dev_output, width, cudaMemcpyDeviceToHost);
+	cudaMemcpy(output, dev_output, mem_size, cudaMemcpyDeviceToHost);
 	CUDA_ASSERT_ERROR();
 
-	matrix_print(first, width, "matrix A:");
-	matrix_print(second, width, "matrix B:");
-	matrix_print(output, width, "matrix C:");
+	matrix_print(output, dim_, "matrix C:");
 
 	/* deallocating memory. */
 	free(first);

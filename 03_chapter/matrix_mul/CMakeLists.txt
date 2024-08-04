@@ -3,7 +3,7 @@ project(03_MatrixMultiplication VERSION 0.1 LANGUAGES C CUDA)
 
 
 option(BUILD_SHARED_LIBS "Build libraries as shared" NO)
-option(BUILD_CUDA_VERSION "BUilding CUDA version" NO)
+option(BUILD_CUDA_VERSION "BUilding CUDA version" YES)
 
 if (BUILD_CUDA_VERSION)
 	set(EXECUTABLE_NAME "MatrixMul_gpu")
@@ -11,7 +11,8 @@ if (BUILD_CUDA_VERSION)
 	set(sources ${PROJECT_SOURCE_DIR}/src/main.cu)
 else()
 	set(EXECUTABLE_NAME "MatrixMul")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O0 -g3 -fsanitize=address -static-libasan -fno-omit-frame-pointer")
+	# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O0 -g3 -fsanitize=address -static-libasan -fno-omit-frame-pointer")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Ofast")
 	set(sources ${PROJECT_SOURCE_DIR}/src/main.c)
 endif()
 

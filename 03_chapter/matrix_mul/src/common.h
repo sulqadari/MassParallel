@@ -14,7 +14,7 @@ do {												\
 		printf("ERROR: %s\nfile: %s\nline: %d\n",	\
 				cudaGetErrorString(status_),		\
 				__FILE__, __LINE__);				\
-		break;										\
+		exit(1);									\
 	}												\
 } while (0)
 
