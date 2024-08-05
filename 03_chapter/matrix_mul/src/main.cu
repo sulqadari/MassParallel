@@ -110,7 +110,7 @@ main(int argc, char* argv[])
 	cudaMemcpy(dev_second, second, mem_size, cudaMemcpyHostToDevice);
 	CUDA_ASSERT_ERROR();
 
-	dim3 grid_(ceil(mem_size / (double)32), 1, 1);
+	dim3 grid_(ceil(mem_size / (double)1024), 1, 1);
 	dim3 block_(32, 32, 1);
 
 	/* Start point. */
