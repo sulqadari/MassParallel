@@ -258,3 +258,35 @@ cudaGetDeviceProperties(cudaDeviceProp* prop, int device );
 ```
 cudaGetDeviceCount() возвращает общее количество CUDA-совместимых устройств.
 cudaGetDeviceProperties() возвращает параметры устройства.
+
+Результат вызова:
+```shell
+                1. Common
+version:                                       8.6 Ampere
+Device name:                                   NVIDIA GeForce RTX 3060 Laptop GPU
+CUDA cores:                                    3840
+
+                2. Memory
+32-bit registers available per block:          65536 
+Shared memory available per block:             48.0 Kb
+32-bit registers available per multiprocessor: 65536 
+Shared memory available per multiprocessor:    100.0 Kb
+Size of L2 cache                               3.0 Mb
+Constant memory available on device:           64.0 Kb
+Global memory available on device:             6.0 Gb
+Global memory bus width                        192 bits
+
+                3. Compute Capability
+Warp size:                                    32 threads
+Maximum number of threads per block:          1024
+Maximum resident threads per multiprocessor:  1536
+Number of multiprocessors on device:          30
+Maximum size of each dimension of a block:
+                                         X =  1024
+                                         Y =  1024
+                                         Z =  64
+Maximum size of each dimension of a grid:
+                                         X =  2147483647
+                                         Y =  65535
+                                         Z =  65535
+```
